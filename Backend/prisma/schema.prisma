@@ -1,0 +1,262 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  STUDENT
+  TEACHER
+}
+
+enum CourseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DROPPED
+}
+
+enum CourseVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  GRADED
+  LATE
+}
+
+enum QuizType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  MIXED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  class        Int?
+  password     String
+  profile      String?
+  refreshToken String   @unique
+  otp          String?
+  otpExpiresAt DateTime?
+  isVerified   Boolean  @default(false)
+  role         Role     @default(USER)
+
+  // Relations
+  enrolledCourses Enrollment[] // A user can enroll in many courses
+  createdCourses  Course[]     @relation("TeacherCourses") // A teacher can create many courses
+  studentProfile  Student?     // One-to-one with Student profile
+  teacherProfile  Teacher?     // One-to-one with Teacher profile
+  assignments    Assignment[]  // Teacher creates assignments
+  submissions    Submission[]  // Student submits assignments
+  quizzes        Quiz[]        // Teacher creates quizzes
+  quizAttempts   QuizAttempt[] // Student attempts quizzes
+  attendances    Attendance[]  // Student attendance records
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Student profile with attendance number
+model Student {
+  id              String @id @default(uuid())
+  userId          String @unique
+  attendanceNumber String @unique // Unique attendance number for identification
+  grade           String?
+  section         String?
+  rollNumber      Int?
+  parentContact   String?
+  emergencyContact String?
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Teacher profile
+model Teacher {
+  id          String @id @default(uuid())
+  userId      String @unique
+  department  String?
+  qualification String?
+  experience  Int?
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id          String @id @default(uuid())
+  title       String
+  description String
+  duration    Int
+  thumbnail   String?
+  price       Float
+  teacherId   String
+
+  // Relations
+  teacher     User             @relation("TeacherCourses", fields: [teacherId], references: [id])
+  enrollments Enrollment[] // A course can have many enrolled students
+  assignments Assignment[] // Course has many assignments
+  quizzes     Quiz[]       // Course has many quizzes
+  attendances Attendance[] // Course has many attendance records
+  visibility  CourseVisibility @default(PRIVATE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Enrollment {
+  id       String @id @default(uuid())
+  userId   String //student's user ID
+  courseId String
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  // Additional Fields
+  enrolledAt DateTime     @default(now())
+  status     CourseStatus @default(NOT_STARTED)
+  progress   Float        @default(0.0) // Progress percentage
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId]) // Prevent duplicate enrollments
+}
+
+// Assignment model
+model Assignment {
+  id          String @id @default(uuid())
+  title       String
+  description String
+  courseId    String
+  teacherId   String
+  dueDate     DateTime
+  maxScore    Float
+  status      AssignmentStatus @default(DRAFT)
+  
+  // Relations
+  course      Course      @relation(fields: [courseId], references: [id])
+  teacher     User        @relation(fields: [teacherId], references: [id])
+  submissions Submission[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Assignment submission
+model Submission {
+  id           String @id @default(uuid())
+  assignmentId String
+  studentId    String
+  content      String
+  fileUrl      String?
+  score        Float?
+  feedback     String?
+  status       SubmissionStatus @default(NOT_SUBMITTED)
+  submittedAt  DateTime?
+  
+  // Relations
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student   User       @relation(fields: [studentId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Quiz model (AI-powered based on weak subjects)
+model Quiz {
+  id          String @id @default(uuid())
+  title       String
+  description String
+  courseId    String
+  teacherId   String
+  quizType    QuizType
+  questions   Json    // Store questions as JSON
+  timeLimit   Int?    // Time limit in minutes
+  maxScore    Float
+  isActive    Boolean @default(true)
+  
+  // Relations
+  course      Course      @relation(fields: [courseId], references: [id])
+  teacher     User        @relation(fields: [teacherId], references: [id])
+  attempts    QuizAttempt[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Quiz attempt
+model QuizAttempt {
+  id        String @id @default(uuid())
+  quizId    String
+  studentId String
+  answers   Json   // Store answers as JSON
+  score     Float?
+  timeTaken Int?   // Time taken in seconds
+  completedAt DateTime?
+  
+  // Relations
+  quiz     Quiz @relation(fields: [quizId], references: [id])
+  student  User @relation(fields: [studentId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Attendance model
+model Attendance {
+  id        String @id @default(uuid())
+  studentId String
+  courseId  String
+  date      DateTime
+  status    AttendanceStatus
+  remarks   String?
+  
+  // Relations
+  student User   @relation(fields: [studentId], references: [id])
+  course  Course @relation(fields: [courseId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([studentId, courseId, date]) // Prevent duplicate attendance records
+}

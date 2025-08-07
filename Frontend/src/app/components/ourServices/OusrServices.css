@@ -1,0 +1,51 @@
+.main-list li {
+  position: relative;
+  margin-bottom: 40px;
+  padding-left: 70px;
+  &::before {
+    content: "1";
+    height: 40px;
+    width: 40px;
+    position: absolute;
+    background-color: indigo;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: #fff;
+    border-radius: 50%;
+    left:0%;
+  }
+
+  &:nth-child(2)::before {
+    content: "2";
+  }
+
+  &:nth-child(3)::before {
+    content: "3";
+  }
+
+  &:nth-child(4)::before {
+    content: "4";
+  }
+  &:nth-child(5)::before {
+    content: "5";
+  }
+  &:nth-child(6)::before {
+    content: "6";
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    height:40px;
+    width: 5px;
+    background-color: rgb(41, 40, 41);
+    left:20px;
+    top: 100%;
+    z-index: -5;
+  }
+   &:nth-child(6)::after {
+    height: 0;
+    width: 0;
+  }
+}
+/* design line  */

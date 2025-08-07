@@ -1,0 +1,20 @@
+/* .hero-card{
+height:300px;
+width:300px;
+position: absolute;
+top:60%;
+transform:translateY(-50%);
+left:-20%;
+}
+/* .hero-card::before{
+    content:"";
+    position: absolute;
+    background-color: #FFF5F0;
+    height: 100%;
+    width: 100%;
+    color:rgb(48, 39, 39);
+    font-weight:bold;
+    font-size: x-large;
+    transform-origin: center ;
+    z-index: 5;
+} */ 

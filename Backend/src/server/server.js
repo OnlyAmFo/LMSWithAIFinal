@@ -1,0 +1,35 @@
+import express from 'express';
+import cors from 'cors';
+import {config} from 'dotenv';
+import cookieParser from 'cookie-parser';
+// Importing necessary modules
+import authRouter from '../routes/auth.route.js';
+import userRouter from "../routes/user.route.js";
+import courseRouter from "../routes/course.route.js";
+import errorHandler from '../middlewares/errorHandler/errorHandler.middleware.js';
+import adminRouter from '../routes/admin.route.js';
+import assignmentRouter from "../routes/assignment.route.js";
+import attendanceRouter from "../routes/attendance.route.js";
+import aiRouter from "../routes/ai.route.js";
+import enhancedAiRouter from "../routes/enhanced_ai.route.js";
+import quizRouter from "../routes/quiz.route.js";
+import studentRouter from "../routes/student.route.js";
+
+const app = express();
+app.use(cors());
+config();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use('/api/v1/auth', authRouter);
+app.use("/api/v1/user",userRouter);
+app.use("/api/v1/course",courseRouter);
+app.use("/api/v1/admin",adminRouter);
+app.use("/api/v1/assignment", assignmentRouter);
+app.use("/api/v1/attendance", attendanceRouter);
+app.use("/api/v1/ai", aiRouter);
+app.use("/api/v1/enhanced-ai", enhancedAiRouter);
+app.use("/api/v1/quiz", quizRouter);
+app.use("/api/v1/student", studentRouter);
+app.use(errorHandler);
+export default app;
